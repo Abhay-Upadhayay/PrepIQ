@@ -28,7 +28,7 @@ const Results = () => {
     const grade = getGrade();
     const correctCount = results.filter(r => r.isCorrect).length;
     const wrongCount = results.filter(r => !r.isCorrect).length;
-    const skippedCount = total - results.length;
+    const skippedCount = results.filter(r => !r.selectedOption).length;
 
     const handleRetry = () => {
         dispatch(clearExam());
@@ -66,7 +66,7 @@ const Results = () => {
                     {/* Score circle */}
                     <div style={{ position: "relative", display: "inline-block", marginBottom: 24 }}>
                         <svg width="160" height="160" style={{ transform: "rotate(-90deg)" }}>
-                            <circle cx="80" cy="80" r="70" fill="none" stroke="#1e293b" strokeWidth="10" />
+                            <circle cx="80" cy="80" r="70" fill="none" stroke="#334155" strokeWidth="10" />
                             <circle cx="80" cy="80" r="70" fill="none" stroke={grade.color}
                                 strokeWidth="10"
                                 strokeDasharray={`${2 * Math.PI * 70}`}
@@ -136,23 +136,25 @@ const Results = () => {
 
                     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                         {results.map((r, i) => {
-                            const options = questions[i]?.options || [];
+                            const options = r.options || [];
                             return (
                                 <div key={i} style={{
                                     backgroundColor: "#1e293b",
                                     border: `1px solid ${r.isCorrect ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`,
                                     borderRadius: 16, padding: "24px",
-                                    borderLeft: `4px solid ${r.isCorrect ? "#22c55e" : "#ef4444"}`
+                                    borderLeft: `4px solid ${r.isCorrect ? "#22c55e" : r.selectedOption === null ? "#f59e0b" : "#ef4444"}`
                                 }}>
                                     {/* Question header */}
                                     <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 16 }}>
                                         <div style={{
                                             width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                                            backgroundColor: r.isCorrect ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+                                            backgroundColor: r.isCorrect ? "rgba(34,197,94,0.1)" 
+    : r.selectedOption === null ? "rgba(245,158,11,0.1)" 
+    : "rgba(239,68,68,0.1)",
                                             display: "flex", alignItems: "center", justifyContent: "center",
                                             fontSize: 14
                                         }}>
-                                            {r.isCorrect ? "✓" : "✗"}
+                                            {r.isCorrect ? "✓" : r.selectedOption === null ? "—" : "✗"}
                                         </div>
                                         <p style={{ color: "#f1f5f9", fontSize: 14, lineHeight: 1.6 }}>
                                             <span style={{ color: "#475569", fontSize: 12, marginRight: 8 }}>
@@ -230,7 +232,7 @@ const Results = () => {
                                                 fontWeight: 600, marginBottom: 4 }}>
                                                 💡 EXPLANATION
                                             </p>
-                                            <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6 }}>
+                                            <p style={{ fontSize: 20, color: "#94a3b8", lineHeight: 2 }}>
                                                 {r.explanation}
                                             </p>
                                         </div>

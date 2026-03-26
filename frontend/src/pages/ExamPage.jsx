@@ -93,6 +93,11 @@ const ExamPage = () => {
             toast.error("No active session found");
             navigate("/exam/setup");
         }
+
+        if (localStorage.getItem(`submitted_${sessionId}`)) {
+            toast.error("This exam was already submitted");
+            navigate("/dashboard");
+        }
     }, []);
 
     const currentQuestion = questions[currentIndex];
@@ -105,26 +110,44 @@ const ExamPage = () => {
     };
 
     const handleSubmit = async () => {
-        if (submitLock.current || submitted) return;
-        submitLock.current = true;
-        setSubmitted(true);
-        setShowConfirm(false);
+    if (submitLock.current || submitted) return;
 
-        const formattedAnswers = Object.entries(answers).map(([questionId, selectedOption]) => ({
-            questionId,
-            selectedOption
-        }));
+    // Check localStorage too — survives refresh
+    if (localStorage.getItem(`submitted_${sessionId}`)) {
+        toast.error("This exam has already been submitted");
+        navigate(`/results/${sessionId}`);
+        return;
+    }
 
-        const result = await dispatch(submitExam({ sessionId, answers: formattedAnswers }));
+    submitLock.current = true;
+    setSubmitted(true);
+    setShowConfirm(false);
 
-        if (submitExam.fulfilled.match(result)) {
+    const formattedAnswers = Object.entries(answers).map(([questionId, selectedOption]) => ({
+        questionId,
+        selectedOption
+    }));
+
+    const result = await dispatch(submitExam({ sessionId, answers: formattedAnswers }));
+
+    if (submitExam.fulfilled.match(result)) {
+        // Mark as submitted in localStorage
+        localStorage.setItem(`submitted_${sessionId}`, "true");
+        navigate(`/results/${sessionId}`);
+    } else {
+        const errMsg = result.payload || "";
+
+        // Already submitted — just redirect to results
+        if (errMsg.includes("already submitted")) {
             navigate(`/results/${sessionId}`);
-        } else {
-            toast.error("Submission failed. Try again.");
-            setSubmitted(false);
-            submitLock.current = false;
+            return;
         }
-    };
+
+        toast.error(errMsg || "Submission failed");
+        setSubmitted(false);
+        submitLock.current = false;
+    }
+};
 
     const handleTimeUp = () => {
         toast("⏰ Time's up! Auto-submitting...", { icon: "⏰" });

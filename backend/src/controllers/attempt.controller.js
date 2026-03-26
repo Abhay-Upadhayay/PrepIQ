@@ -102,13 +102,34 @@ export const submitSession = async (req, res) => {
             results.push({
                 questionId: question._id,
                 questionText: question.questionText,
+                options: question.options,
                 selectedOption: answer.selectedOption,
                 correctOption: question.correctOption,
                 isCorrect,
                 explanation: question.explanation
             });
         }
+        
+        const answeredIds = answers.map(a => a.questionId.toString());
+        const skippedIds = session.questions.filter(
+            qId => !answeredIds.includes(qId.toString())
+        );
 
+        for (const qId of skippedIds) {
+            const question = await Question.findById(qId);
+            if (!question) continue;
+
+            results.push({
+                questionId: question._id,
+                questionText: question.questionText,
+                options: question.options,
+                selectedOption: null,       // skipped — no answer
+                correctOption: question.correctOption,
+                isCorrect: false,
+                explanation: question.explanation
+            });
+        }
+        
         // Save all answers
         await AttemptAnswer.insertMany(answerDocs);
 

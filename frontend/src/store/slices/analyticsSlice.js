@@ -41,6 +41,9 @@ export const fetchAIQuestions = createAsyncThunk("analytics/fetchAI", async (par
 const analyticsSlice = createSlice({
     name: "analytics",
     initialState: {
+        heatmap: {},
+        totalActiveDays: 0,
+        maxStreak: 0,
         stats: null,
         weakAreas: [],
         subjectWise: [],
@@ -100,7 +103,21 @@ const analyticsSlice = createSlice({
             .addCase(fetchAIQuestions.rejected, (state, action) => {
                 state.aiLoading = false;
                 state.error = action.payload;
-            });
+            })
+            .addCase(fetchHeatmap.fulfilled, (state, action) => {
+                state.heatmap = action.payload.heatmap;
+                state.totalActiveDays = action.payload.totalActiveDays;
+                state.maxStreak = action.payload.maxStreak;
+            })
+    }
+});
+
+export const fetchHeatmap = createAsyncThunk("analytics/heatmap", async (_, { rejectWithValue }) => {
+    try {
+        const res = await api.get("/analytics/heatmap");
+        return res.data;
+    } catch (err) {
+        return rejectWithValue(err.response?.data?.message);
     }
 });
 

@@ -136,3 +136,62 @@ export const getRecentSessions = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+export const getHeatmapData = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // Get sessions from last 365 days
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        const sessions = await AttemptSession.find({
+            userId,
+            endTime: { $exists: true },
+            createdAt: { $gte: oneYearAgo }
+        }).select("createdAt");
+
+        // Group by date
+        const countMap = {};
+        sessions.forEach(session => {
+            const date = new Date(session.createdAt)
+                .toISOString().split("T")[0]; // "2024-03-25"
+            countMap[date] = (countMap[date] || 0) + 1;
+        });
+
+        // Total active days and max streak
+        const dates = Object.keys(countMap).sort();
+        const totalActiveDays = dates.length;
+
+        // Calculate max streak
+        let maxStreak = 0;
+        let currentStreak = 0;
+        let prevDate = null;
+
+        for (const date of dates) {
+            if (prevDate) {
+                const diff = (new Date(date) - new Date(prevDate)) / (1000 * 60 * 60 * 24);
+                if (diff === 1) {
+                    currentStreak++;
+                } else {
+                    maxStreak = Math.max(maxStreak, currentStreak);
+                    currentStreak = 1;
+                }
+            } else {
+                currentStreak = 1;
+            }
+            prevDate = date;
+        }
+        maxStreak = Math.max(maxStreak, currentStreak);
+
+        res.status(200).json({
+            heatmap: countMap,
+            totalActiveDays,
+            maxStreak,
+            totalSessions: sessions.length
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

@@ -36,7 +36,7 @@ export const updateWeakAreas = async (userId) => {
                 accuracyPercent: accuracy,
                 lastUpdated: new Date()
             },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: "after" }
         );
     }
 

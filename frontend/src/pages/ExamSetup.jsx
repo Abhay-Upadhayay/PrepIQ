@@ -71,6 +71,11 @@ const ExamSetup = () => {
     };
 
     const handleStart = async () => {
+        
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith("submitted_")) localStorage.removeItem(key);
+        });
+
         if (!config.subject) return toast.error("Please select a subject");
 
         const payload = {
