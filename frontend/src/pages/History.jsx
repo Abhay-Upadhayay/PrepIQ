@@ -1,18 +1,42 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchStats } from "../store/slices/analyticsSlice";
+import api from "../api/axios";
 import Loader from "../components/common/Loader";
 
 const History = () => {
-    const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { recentSessions, loading } = useSelector(state => state.analytics);
+    
+    const [historySessions, setHistorySessions] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const [filter, setFilter] = useState("all");
     const [sortBy, setSortBy] = useState("date");
 
-    useEffect(() => { dispatch(fetchStats()); }, []);
+    useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                const res = await api.get("/attempts/my");
+                const formatted = res.data.sessions.map(s => ({
+                    _id: s._id,
+                    type: s.type,
+                    subject: s.subject,
+                    score: s.score,
+                    total: s.questions.length,
+                    percentage: Math.round((s.score / s.questions.length) * 100) || 0,
+                    timeTaken: s.endTime 
+                        ? Math.round((new Date(s.endTime) - new Date(s.startTime)) / 1000)
+                        : null,
+                    date: s.endTime || s.createdAt
+                }));
+                setHistorySessions(formatted);
+            } catch (error) {
+                console.error("Failed to load history:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchHistory();
+    }, []);
 
     const getAccuracyColor = (acc) => {
         if (acc >= 75) return "#22c55e";
@@ -27,7 +51,7 @@ const History = () => {
         return { label: "Poor", color: "#ef4444" };
     };
 
-    const filtered = recentSessions
+    const filtered = historySessions
         .filter(s => filter === "all" || s.type === filter)
         .sort((a, b) => {
             if (sortBy === "date") return new Date(b.date) - new Date(a.date);
@@ -37,14 +61,14 @@ const History = () => {
         });
 
     // Summary stats from sessions
-    const totalSessions = recentSessions.length;
+    const totalSessions = historySessions.length;
     const avgScore = totalSessions
-        ? Math.round(recentSessions.reduce((a, b) => a + b.percentage, 0) / totalSessions)
+        ? Math.round(historySessions.reduce((a, b) => a + b.percentage, 0) / totalSessions)
         : 0;
     const bestScore = totalSessions
-        ? Math.max(...recentSessions.map(s => s.percentage))
+        ? Math.max(...historySessions.map(s => s.percentage))
         : 0;
-    const totalQuestions = recentSessions.reduce((a, b) => a + b.total, 0);
+    const totalQuestions = historySessions.reduce((a, b) => a + b.total, 0);
 
     if (loading) return (
         <div style={{ minHeight: "100vh", backgroundColor: "#0a0f1a" }}

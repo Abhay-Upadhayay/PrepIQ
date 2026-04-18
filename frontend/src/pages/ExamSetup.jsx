@@ -48,6 +48,14 @@ const ExamSetup = () => {
     const { loading } = useSelector(state => state.exam);
     const { user } = useSelector(state => state.auth);
 
+    const [mode, setMode] = useState("standard"); // "standard" | "upload"
+    const [uploadData, setUploadData] = useState({
+        file: null,
+        testName: "",
+        numberOfQuestions: 10,
+        timeLimit: 60
+    });
+
     const [step, setStep] = useState(1); // 1 = subject, 2 = config
     const [config, setConfig] = useState({
         exam: user?.targetExam || "GATE",
@@ -68,6 +76,37 @@ const ExamSetup = () => {
     const handleSubjectSelect = (subject) => {
         setConfig(prev => ({ ...prev, subject, topic: "" }));
         setStep(2);
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file && file.type !== "application/pdf") {
+            toast.error("Only PDF files are allowed");
+            e.target.value = null;
+            return;
+        }
+        setUploadData(prev => ({ ...prev, file }));
+    };
+
+    const handleUploadStart = () => {
+        if (!uploadData.testName.trim()) {
+            return toast.error("Test name is required");
+        }
+        if (!uploadData.file) {
+            return toast.error("Please upload a PDF file");
+        }
+        if (uploadData.file.type !== "application/pdf") {
+            return toast.error("Only PDF files are allowed");
+        }
+        if (!uploadData.numberOfQuestions || uploadData.numberOfQuestions <= 0) {
+            return toast.error("Number of questions must be greater than 0");
+        }
+        if (!uploadData.timeLimit || uploadData.timeLimit <= 0 || uploadData.timeLimit > 360) {
+            return toast.error("Time limit must be between 1 and 360 minutes");
+        }
+        
+        toast.success("PDF Exam configuration valid!");
+        // TODO: Start Upload logic later (Backend not yet implemented)
     };
 
     const handleStart = async () => {
@@ -118,8 +157,26 @@ const ExamSetup = () => {
                     </p>
                 </div>
 
-                {/* Step indicators */}
-                <div className="flex items-center gap-3 mb-8">
+                {/* Mode Selector */}
+                <div className="flex bg-[#1e293b] p-1 rounded-xl mb-8 border border-[#334155]">
+                    <button 
+                        onClick={() => setMode("standard")}
+                        className={`flex-1 py-3 text-sm font-medium rounded-lg transition ${mode === "standard" ? "bg-[#6366f1] text-white shadow-lg" : "text-[#94a3b8] hover:text-white"}`}
+                    >
+                        Standard Practice
+                    </button>
+                    <button 
+                        onClick={() => setMode("upload")}
+                        className={`flex-1 py-3 text-sm font-medium rounded-lg transition ${mode === "upload" ? "bg-[#6366f1] text-white shadow-lg" : "text-[#94a3b8] hover:text-white"}`}
+                    >
+                        Upload Custom PDF
+                    </button>
+                </div>
+
+                {mode === "standard" ? (
+                    <>
+                        {/* Step indicators */}
+                        <div className="flex items-center gap-3 mb-8">
                     {["Choose Subject", "Configure"].map((label, i) => (
                         <div key={i} className="flex items-center gap-3">
                             <div className="flex items-center gap-2">
@@ -353,6 +410,86 @@ const ExamSetup = () => {
                             style={{ backgroundColor: "#6366f1", boxShadow: "0 4px 20px rgba(99,102,241,0.3)" }}
                         >
                             {loading ? <Loader size="sm" /> : `Start ${config.type === "mock" ? "Mock Test" : "Practice"} →`}
+                        </button>
+                    </div>
+                )}
+                    </>
+                ) : (
+                    <div className="rounded-2xl p-8 space-y-6" style={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}>
+                        <div>
+                            <label className="block text-sm font-medium mb-3" style={{ color: "#94a3b8" }}>
+                                Test Name
+                            </label>
+                            <input 
+                                type="text"
+                                value={uploadData.testName}
+                                onChange={e => setUploadData(prev => ({ ...prev, testName: e.target.value }))}
+                                placeholder="e.g. CS201 Midterm Questions"
+                                className="w-full px-4 py-3 rounded-xl bg-[#0f172a] text-white border border-[#334155] focus:outline-none focus:border-[#6366f1] transition"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-3" style={{ color: "#94a3b8" }}>
+                                Upload PDF File
+                            </label>
+                            <div className="w-full px-4 py-8 rounded-xl bg-[#0f172a] border border-dashed border-[#475569] text-center relative hover:border-[#6366f1] transition cursor-pointer">
+                                <input 
+                                    type="file" 
+                                    accept=".pdf"
+                                    onChange={handleFileChange}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                />
+                                {uploadData.file ? (
+                                    <div className="text-white flex flex-col items-center gap-2">
+                                        <svg className="w-8 h-8 text-[#22c55e]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span className="text-sm font-medium">{uploadData.file.name}</span>
+                                    </div>
+                                ) : (
+                                    <div className="text-[#94a3b8] flex flex-col items-center gap-2 pointer-events-none">
+                                        <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                        </svg>
+                                        <span className="text-sm">Click or drag and drop PDF here</span>
+                                        <span className="text-xs text-[#475569]">Only .pdf files are allowed</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-3" style={{ color: "#94a3b8" }}>
+                                    Number of Questions
+                                </label>
+                                <input 
+                                    type="number"
+                                    min="1"
+                                    value={uploadData.numberOfQuestions}
+                                    onChange={e => setUploadData(prev => ({ ...prev, numberOfQuestions: e.target.value === "" ? "" : parseInt(e.target.value) }))}
+                                    className="w-full px-4 py-3 rounded-xl bg-[#0f172a] text-white border border-[#334155] focus:outline-none focus:border-[#6366f1] transition"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-3" style={{ color: "#94a3b8" }}>
+                                    Time Limit (minutes)
+                                </label>
+                                <input 
+                                    type="number"
+                                    max="360"
+                                    min="1"
+                                    value={uploadData.timeLimit}
+                                    onChange={e => setUploadData(prev => ({ ...prev, timeLimit: e.target.value === "" ? "" : parseInt(e.target.value) }))}
+                                    className="w-full px-4 py-3 rounded-xl bg-[#0f172a] text-white border border-[#334155] focus:outline-none focus:border-[#6366f1] transition"
+                                />
+                            </div>
+                        </div>
+                        <button
+                            onClick={handleUploadStart}
+                            className="w-full mt-4 py-4 rounded-xl font-semibold text-white transition hover:opacity-90"
+                            style={{ backgroundColor: "#6366f1", boxShadow: "0 4px 20px rgba(99,102,241,0.3)" }}
+                        >
+                            Process PDF Exam →
                         </button>
                     </div>
                 )}

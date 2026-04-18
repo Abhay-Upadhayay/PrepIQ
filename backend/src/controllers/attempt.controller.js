@@ -119,6 +119,16 @@ export const submitSession = async (req, res) => {
             const question = await Question.findById(qId);
             if (!question) continue;
 
+            answerDocs.push({
+                userId: req.user.id,
+                sessionId,
+                questionId: question._id,
+                selectedOption: null,
+                isCorrect: false,
+                subject: question.subject,
+                topic: question.topic
+            });
+
             results.push({
                 questionId: question._id,
                 questionText: question.questionText,
@@ -145,7 +155,7 @@ export const submitSession = async (req, res) => {
             message: "Session submitted",
             score,
             total: answers.length,
-            percentage: Math.round((score / answers.length) * 100),
+            percentage: Math.round((score / session.questions.length) * 100),
             results
         });
 

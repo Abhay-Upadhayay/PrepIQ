@@ -1,5 +1,13 @@
 
 .env
+.env
+.env.local
+.env.example
+doSeed.js
+otherQuestions.js
+seedGate.js
+seedQuestions.js
+seedUserData.js
 
 
 # Logs

@@ -3,3 +3,5 @@ node_modules
 .env
 .env.local
 .env.example
+report.md
+PrepIQ_System_Architecture.md

@@ -119,7 +119,7 @@ const Dashboard = () => {
                     overflowY: "auto"
                 }}>
                     {/* Avatar + name */}
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, paddingBottom: 20, borderBottom: "1px solid #1e293b" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, paddingBottom: 20, borderBottom: "1px solid #1e293b" }}>
                         <div style={{
                             width: 72, height: 72, borderRadius: "50%",
                             background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
@@ -139,7 +139,7 @@ const Dashboard = () => {
                             borderRadius: 100, padding: "4px 12px",
                             fontSize: 12, color: "#a5b4fc"
                         }}>
-                            🎯 {user?.targetExam}
+                            {user?.targetExam}
                         </div>
                     </div>
 

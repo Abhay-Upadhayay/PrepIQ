@@ -1,6 +1,7 @@
 import { AttemptSession } from "../models/attemptSession.model.js";
 import { AttemptAnswer } from "../models/attemptAnswer.model.js";
 import { WeakAreaStat } from "../models/weakAreaStat.model.js";
+import mongoose from "mongoose";
 
 // Overall stats — total attempts, avg score, best score
 export const getMyStats = async (req, res) => {
